@@ -17,6 +17,33 @@ class MyLogDownloader {
         //this.zip.file(`mylog/mylog.db`, await this.#makeDb())
         //this.zip.file(`mylog/index.html`, this.#getIndex())
         //this.zip.file(`mylog/server.sh`, await this.#getCode(`server.sh`))
+        const files = await Promise.all([
+            this.#getStyle(),
+            this.#mpurseSendButtonCode(),
+            this.#getCode(`lib/toastify/1.11.2/min.css`),
+            this.#getCode(`lib/toastify/1.11.2/min.js`),
+            this.#getCode(`server.sh`),
+            this.#getCode(`run_server.py`),
+            this.#getCode(`lib/party/party.min.js`),
+            this.#getCode(`js/party-sparkle-image.js`),
+            this.#getCode(`js/party-sparkle-hart.js`),
+            this.#getIndex(),
+            this.#makeDb(),
+            this.#assetsMonacoin(),
+        ])
+        const style = files[0]
+        const mpurseSendButton = files[1]
+        const toastifyCss = files[2]
+        const toastify = files[3]
+        const serverSh = files[4]
+        const serverPy = files[5]
+        const party = files[6]
+        const partySparkleImage = files[7]
+        const partySparkleHart = files[8]
+        const staticIndex = files[9]
+        const sqlite3Db = files[10]
+
+        /*
         const style = await this.#getStyle()
         const mpurseSendButton = await this.#mpurseSendButtonCode()
         const toastifyCss = await this.#getCode(`lib/toastify/1.11.2/min.css`)
@@ -26,7 +53,9 @@ class MyLogDownloader {
         const party = await this.#getCode(`lib/party/party.min.js`)
         const partySparkleImage = await this.#getCode(`js/party-sparkle-image.js`)
         const partySparkleHart = await this.#getCode(`js/party-sparkle-hart.js`)
-        this.zip.file(`mylog/static/index.html`, new TextEncoder().encode(await this.#getIndex()))
+        */
+        //this.zip.file(`mylog/static/index.html`, new TextEncoder().encode(await this.#getIndex()))
+        this.zip.file(`mylog/static/index.html`, new TextEncoder().encode(staticIndex))
         this.zip.file(`mylog/static/css/style.css`, style)
         this.zip.file(`mylog/static/js/main.js`, new TextEncoder().encode(this.#getMain()))
         if (window.mpurse) {
@@ -39,7 +68,8 @@ class MyLogDownloader {
             this.zip.file(`mylog/static/js/monacoin/party-sparkle-image.js`, partySparkleImage)
             this.zip.file(`mylog/static/js/monacoin/party-sparkle-hart.js`, partySparkleHart)
         }
-        this.zip.file(`mylog/sqlite3/db/mylog.db`, await this.#makeDb())
+        //this.zip.file(`mylog/sqlite3/db/mylog.db`, await this.#makeDb())
+        this.zip.file(`mylog/sqlite3/db/mylog.db`, sqlite3Db)
         this.zip.file(`mylog/sqlite3/index.html`, this.#getCode(`js/app/export/sqlite3/index.html`))
         this.zip.file(`mylog/sqlite3/css/style.css`, style)
         this.zip.file(`mylog/sqlite3/js/main.js`, this.#getCode(`js/app/export/sqlite3/main.js`))
@@ -55,14 +85,8 @@ class MyLogDownloader {
         this.zip.file(`mylog/sqlite3/lib/monacoin/mpurse-send-button.js`, mpurseSendButton)
         this.zip.file(`mylog/sqlite3/lib/monacoin/party-sparkle-image.js`, partySparkleImage)
         this.zip.file(`mylog/sqlite3/lib/monacoin/party-sparkle-hart.js`, partySparkleHart)
-        await this.#assetsMonacoin() 
-        //this.#makeHtmlFiles(files)
-        //await Promise.all([this.#makeHtmlFiles(), this.#makeJsFiles(), this.#makeImageFiles()])
+        //await this.#assetsMonacoin() 
         const file = await this.zip.generateAsync({type:'blob', platform:this.#getOs()})
-        //const file = await this.zip.generateAsync({type:"base64", platform:this.#getOs()})
-        //const file = await this.zip.generateAsync({type:"base64"})
-        //const file = await this.zip.generateAsync({type:"blob"})
-        //const file = await this.zip.generateAsync()
         console.debug(file)
         const url = (window.URL || window.webkitURL).createObjectURL(file);
         const download = document.createElement('a');
