@@ -1,0 +1,5 @@
+.pixel-art {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;  /* Firefox用 */
+    -ms-interpolation-mode: nearest-neighbor;  /* IE用 */
+}
