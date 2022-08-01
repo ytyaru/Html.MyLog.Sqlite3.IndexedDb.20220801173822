@@ -3,10 +3,11 @@ class DbToHtml {
         this.now = new Date()
         this.loader = (loader) ? loader : new SqliteDbLoader()
     }
-    toHtml() {
-        const cms = this.loader.exec(`select id,content,created from comments order by created desc;`)
+    async toHtml() {
+        await this.loader.load()
+        const cms = await this.loader.DB.exec(`select id,content,created from comments order by created desc;`)
         console.debug(cms)
-        cms[0].values.map(r=>this.toComment(r[0], r[1], r[2]))
+        return cms[0].values.map(r=>this.toComment(r[0], r[1], r[2])).join('')
     }
     toComment(id, content, created) {
         return `<a id="${id}" class="anchor"></a><div class="mylog"><p>${this.br(this.autoLink(content))}</p><div class="mylog-meta">${this.#toTime(created)}<a href="#${id}">🔗</a>${this.#toMpurseButton()}</div></div>`

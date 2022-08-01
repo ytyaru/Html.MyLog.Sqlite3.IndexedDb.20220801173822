@@ -41,11 +41,12 @@ class MyLogDownloader {
         }
         this.zip.file(`mylog/sqlite3/db/mylog.db`, await this.#makeDb())
         this.zip.file(`mylog/sqlite3/index.html`, this.#getCode(`js/app/export/sqlite3/index.html`))
+        this.zip.file(`mylog/sqlite3/css/style.css`, style)
         this.zip.file(`mylog/sqlite3/js/main.js`, this.#getCode(`js/app/export/sqlite3/main.js`))
         this.zip.file(`mylog/sqlite3/lib/mylog/sqlite-db-loader.js`, this.#getCode(`js/app/export/sqlite3/sqlite-db-loader.js`))
         this.zip.file(`mylog/sqlite3/lib/mylog/db-to-html.js`, this.#getCode(`js/app/export/sqlite3/db-to-html.js`))
         this.zip.file(`mylog/sqlite3/lib/sql.js/1.7.0/sql-wasm.min.js`, this.#getCode(`lib/sql.js/1.7.0/sql-wasm.min.js`))
-        this.zip.file(`mylog/sqlite3/lib/sql.js/1.7.0/sql-wasm.wasm`, this.#getCode(`lib/sql.js/1.7.0/sql-wasm.wasm`))
+        this.zip.file(`mylog/sqlite3/lib/sql.js/1.7.0/sql-wasm.wasm`, this.#getBinary(`lib/sql.js/1.7.0/sql-wasm.wasm`))
         this.zip.file(`mylog/sqlite3/server.sh`, serverSh , {unixPermissions: "755"})
         this.zip.file(`mylog/sqlite3/run_server.py`, serverPy)
         this.zip.file(`mylog/sqlite3/lib/toastify/1.11.2/min.js`, toastify)
@@ -54,7 +55,7 @@ class MyLogDownloader {
         this.zip.file(`mylog/sqlite3/lib/monacoin/mpurse-send-button.js`, mpurseSendButton)
         this.zip.file(`mylog/sqlite3/lib/monacoin/party-sparkle-image.js`, partySparkleImage)
         this.zip.file(`mylog/sqlite3/lib/monacoin/party-sparkle-hart.js`, partySparkleHart)
-
+        await this.#assetsMonacoin() 
         //this.#makeHtmlFiles(files)
         //await Promise.all([this.#makeHtmlFiles(), this.#makeJsFiles(), this.#makeImageFiles()])
         const file = await this.zip.generateAsync({type:'blob', platform:this.#getOs()})
@@ -72,10 +73,24 @@ class MyLogDownloader {
         Loading.hide()
         //Toaster.toast(`ZIPファイルをダウンロードしました！`)
     }
+    async #assetsMonacoin() {
+        const ids = ['coin-mark-black', 'coin-mark', 'coin-mini-monar-mouth-red', 'coin-mini-monar', 'coin-monar-mouth-red', 'coin-monar', 'mark-outline', 'mark', 'monar-mark-white', 'monar-mark', 'monar-mouth-red', 'monar-no-face', 'monar-transparent', 'monar']
+        const svgs = ids.map(id=>this.#getCode(`/asset/image/monacoin/svg/${id}.svg`))
+        const png64s = ids.map(id=>this.#getBinary(`/asset/image/monacoin/png/64/${id}.png`))
+        const png256s = ids.map(id=>this.#getBinary(`/asset/image/monacoin/png/256/${id}.png`))
+        const files = await Promise.all([...svgs, ...png64s, ...png256s])
+        for (let i=0; i<ids.length; i++) {
+            this.zip.file(`mylog/sqlite3/asset/image/monacoin/svg/${ids[i]}.svg`, files[i+((i/3)*0)])
+            this.zip.file(`mylog/sqlite3/asset/image/monacoin/png/64/${ids[i]}.png`, files[i+((i/3)*1)])
+            this.zip.file(`mylog/sqlite3/asset/image/monacoin/png/256/${ids[i]}.png`, files[i+((i/3)*2)])
+        }
+    }
     async #mpurseSendButtonCode() {
-        const code = await this.#getCode(`js/mpurse-send-button.js`)
+        const code = await this.#getCode(`js/mpurse-send-button.js`, true)
+        console.debug(code)
         const address = await window.mpurse.getAddress()
-        return code.replace(/MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu/g, address)
+        return new TextEncoder().encode(code.replace(/MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu/g, address))
+        //return code.replace(/MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu/g, address)
     }
     async #getIndex() {
         //return 'data:text/plain;charset=utf-8,' + encodeURI(
@@ -113,10 +128,19 @@ ${content}
         return cms.map(c=>TextToHtml.toHtml(c.id, c.content, c.created, address, true)).join('')
     }
     async #getStyle() { return this.#getCode(`./css/styles.css`) }
-    async #getCode(path) {
+    async #getCode(path, isText=false) {
         const res = await fetch(path)
-        return await res.text()
+        const txt = await res.text()
+        console.log(isText)
+        return ((isText) ? txt : new TextEncoder().encode(txt))
+        //return new TextEncoder().encode(txt)
+        //return await res.text()
         //return 'data:text/plain;charset=utf-8,' + encodeURI(await res.text())
+    }
+    async #getBinary(path) {
+        const res = await fetch(path)
+        const buf = await res.arrayBuffer()
+        return new Uint8Array(buf)
     }
     #getMain() { return `window.addEventListener('DOMContentLoaded', async(event) => {
     const db = new MyLogDb()
