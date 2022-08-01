@@ -2,9 +2,11 @@ class MyLogDownloader {
     constructor(db) {
         this.SQL = null
         this.db = db
+        this.files = new Map()
     }
     async download() {
-        await Promise.all([this.downloadDb(), this.downloadHtml()])
+        await this.downloadHtml()
+        //await Promise.all([this.downloadDb(), this.downloadHtml()])
         Toaster.toast(`ダウンロードしました！`)
     }
     async downloadHtml() { // zip版
@@ -15,22 +17,44 @@ class MyLogDownloader {
         //this.zip.file(`mylog/mylog.db`, await this.#makeDb())
         //this.zip.file(`mylog/index.html`, this.#getIndex())
         //this.zip.file(`mylog/server.sh`, await this.#getCode(`server.sh`))
-        this.zip.file(`mylog/index.html`, new TextEncoder().encode(await this.#getIndex()))
-        this.zip.file(`mylog/css/style.css`, await this.#getStyle())
-        this.zip.file(`mylog/js/main.js`, new TextEncoder().encode(this.#getMain()))
+        const style = await this.#getStyle()
+        const mpurseSendButton = await this.#mpurseSendButtonCode()
+        const toastifyCss = await this.#getCode(`lib/toastify/1.11.2/min.css`)
+        const toastify = await this.#getCode(`lib/toastify/1.11.2/min.js`)
+        const serverSh = await this.#getCode(`server.sh`)
+        const serverPy = await this.#getCode(`run_server.py`)
+        const party = await this.#getCode(`lib/party/party.min.js`)
+        const partySparkleImage = await this.#getCode(`js/party-sparkle-image.js`)
+        const partySparkleHart = await this.#getCode(`js/party-sparkle-hart.js`)
+        this.zip.file(`mylog/static/index.html`, new TextEncoder().encode(await this.#getIndex()))
+        this.zip.file(`mylog/static/css/style.css`, style)
+        this.zip.file(`mylog/static/js/main.js`, new TextEncoder().encode(this.#getMain()))
         if (window.mpurse) {
-            const code = await this.#getCode(`js/mpurse-send-button.js`)
-            const address = await window.mpurse.getAddress()
-            this.zip.file(`mylog/server.sh`, await this.#getCode(`server.sh`), {unixPermissions: "755"})
-            this.zip.file(`mylog/run_server.py`, await this.#getCode(`run_server.py`))
-            this.zip.file(`mylog/lib/toastify/1.11.2/min.js`, await this.#getCode(`lib/toastify/1.11.2/min.js`))
-            this.zip.file(`mylog/lib/toastify/1.11.2/min.css`, await this.#getCode(`lib/toastify/1.11.2/min.css`))
-            this.zip.file(`mylog/lib/party/party.min.js`, await this.#getCode(`lib/party/party.min.js`))
-            this.zip.file(`mylog/js/monacoin/mpurse-send-button.js`, code.replace(/MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu/g, address))
-            this.zip.file(`mylog/js/monacoin/party-sparkle-image.js`, await this.#getCode(`js/party-sparkle-image.js`))
-            this.zip.file(`mylog/js/monacoin/party-sparkle-hart.js`, await this.#getCode(`js/party-sparkle-hart.js`))
+            this.zip.file(`mylog/static/server.sh`, serverSh , {unixPermissions: "755"})
+            this.zip.file(`mylog/static/run_server.py`, serverPy)
+            this.zip.file(`mylog/static/lib/toastify/1.11.2/min.js`, toastify)
+            this.zip.file(`mylog/static/lib/toastify/1.11.2/min.css`, toastifyCss)
+            this.zip.file(`mylog/static/lib/party/party.min.js`, party)
+            this.zip.file(`mylog/static/js/monacoin/mpurse-send-button.js`, mpurseSendButton)
+            this.zip.file(`mylog/static/js/monacoin/party-sparkle-image.js`, partySparkleImage)
+            this.zip.file(`mylog/static/js/monacoin/party-sparkle-hart.js`, partySparkleHart)
         }
-        this.zip.file(`mylog/test.txt`, `日本語UTF8`)
+        this.zip.file(`mylog/sqlite3/db/mylog.db`, await this.#makeDb())
+        this.zip.file(`mylog/sqlite3/index.html`, this.#getCode(`js/app/export/sqlite3/index.html`))
+        this.zip.file(`mylog/sqlite3/js/main.js`, this.#getCode(`js/app/export/sqlite3/main.js`))
+        this.zip.file(`mylog/sqlite3/lib/mylog/sqlite-db-loader.js`, this.#getCode(`js/app/export/sqlite3/sqlite-db-loader.js`))
+        this.zip.file(`mylog/sqlite3/lib/mylog/db-to-html.js`, this.#getCode(`js/app/export/sqlite3/db-to-html.js`))
+        this.zip.file(`mylog/sqlite3/lib/sql.js/1.7.0/sql-wasm.min.js`, this.#getCode(`lib/sql.js/1.7.0/sql-wasm.min.js`))
+        this.zip.file(`mylog/sqlite3/lib/sql.js/1.7.0/sql-wasm.wasm`, this.#getCode(`lib/sql.js/1.7.0/sql-wasm.wasm`))
+        this.zip.file(`mylog/sqlite3/server.sh`, serverSh , {unixPermissions: "755"})
+        this.zip.file(`mylog/sqlite3/run_server.py`, serverPy)
+        this.zip.file(`mylog/sqlite3/lib/toastify/1.11.2/min.js`, toastify)
+        this.zip.file(`mylog/sqlite3/lib/toastify/1.11.2/min.css`, toastifyCss)
+        this.zip.file(`mylog/sqlite3/lib/party/party.min.js`, party)
+        this.zip.file(`mylog/sqlite3/lib/monacoin/mpurse-send-button.js`, mpurseSendButton)
+        this.zip.file(`mylog/sqlite3/lib/monacoin/party-sparkle-image.js`, partySparkleImage)
+        this.zip.file(`mylog/sqlite3/lib/monacoin/party-sparkle-hart.js`, partySparkleHart)
+
         //this.#makeHtmlFiles(files)
         //await Promise.all([this.#makeHtmlFiles(), this.#makeJsFiles(), this.#makeImageFiles()])
         const file = await this.zip.generateAsync({type:'blob', platform:this.#getOs()})
@@ -47,6 +71,11 @@ class MyLogDownloader {
         (window.URL || window.webkitURL).revokeObjectURL(url);
         Loading.hide()
         //Toaster.toast(`ZIPファイルをダウンロードしました！`)
+    }
+    async #mpurseSendButtonCode() {
+        const code = await this.#getCode(`js/mpurse-send-button.js`)
+        const address = await window.mpurse.getAddress()
+        return code.replace(/MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu/g, address)
     }
     async #getIndex() {
         //return 'data:text/plain;charset=utf-8,' + encodeURI(

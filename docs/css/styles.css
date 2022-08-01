@@ -27,7 +27,7 @@ div.mylog, div.mylog-meta { padding:0; margin:0; }
 a.anchor { content-visibility: auto; }
 */
 a.anchor { display:none; }
-div.mylog { background-color:#ffffff; border-radius:1em; border:solid; margin-bottom:0.5em; }
+div.mylog { background-color:#ffffff; border-radius:1em; border:1px solid black; margin-bottom:0.5em; }
 div.mylog p { padding:0.5em; margin:0; }
 /*div.mylog { background-color:#ffffff; padding:0.5em; margin:0.5em; border-radius:1em; border:solid; }*/
 /*div.mylog p { background-color:#ffffff; padding:0.5em; margin:0.5em; border-radius:1em;}*/
